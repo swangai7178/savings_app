@@ -1,226 +1,141 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../models/period_model.dart';
-import '../models/expense_model.dart';
+import 'package:my_saver/models/goalmodel.dart';
+import 'package:my_saver/models/transactionmodel.dart';
+import 'package:my_saver/service/hive_service.dart';
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
-
+class DashboardPage extends StatefulWidget {
+  const DashboardPage({super.key});
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  late Box<PeriodModel> periodBox;
-  late Box<ExpenseModel> expenseBox;
+class _DashboardPageState extends State<DashboardPage> {
+  double balance = 0.0;
+  List<TransactionModel> transactions = [];
+  List<GoalModel> goals = [];
 
   @override
   void initState() {
     super.initState();
-    periodBox = Hive.box<PeriodModel>('periods');
-    expenseBox = Hive.box<ExpenseModel>('expenses');
+    _loadData();
   }
 
-  PeriodModel? get currentPeriod =>
-      periodBox.isEmpty ? null : periodBox.getAt(periodBox.length - 1);
-
-  List<ExpenseModel> get currentExpenses {
-    if (currentPeriod == null) return [];
-    return expenseBox.values
-        .where((e) => e.periodKey == currentPeriod!.key)
-        .toList();
+  Future<void> _loadData() async {
+    final bal = await HiveService.getBalance();
+    final txns = await HiveService.getTransactions();
+    final g = await HiveService.getGoals();
+    setState(() {
+      balance = bal;
+      transactions = txns;
+      goals = g;
+    });
   }
 
-  double get totalSpent =>
-      currentExpenses.fold(0, (sum, e) => sum + e.amount);
+  void _addSavingToGoal(int index, double amount) async {
+    if (balance >= amount) {
+      // deduct from balance
+      balance -= amount;
+      await HiveService.setBalance(balance);
 
-  double get remaining =>
-      (currentPeriod?.startingAmount ?? 0) - totalSpent;
+      // update goal
+      final goal = goals[index];
+      goal.savedAmount += amount;
+      await HiveService.updateGoal(index, goal);
 
-  double get avgPerDay {
-    if (currentPeriod == null || currentExpenses.isEmpty) return 0;
-    final daysPassed =
-        DateTime.now().difference(currentPeriod!.startDate).inDays + 1;
-    return totalSpent / daysPassed;
+      // add transaction
+      await HiveService.addTransaction(TransactionModel(
+        title: 'Saved for ${goal.name}',
+        amount: amount,
+        date: DateTime.now(),
+        isExpense: true,
+      ));
+      _loadData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Insufficient balance'),
+      ));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('My Saver'),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () async {
-            await Navigator.pushNamed(context, '/newPeriod');
-            setState(() {});
-          },
-          child: const Icon(CupertinoIcons.refresh_thin, size: 26),
-        ),
-      ),
-      child: SafeArea(
-        child: currentPeriod == null
-            ? Center(
-                child: Text(
-                  'No active period.\nTap refresh to create one.',
-                  style: CupertinoTheme.of(context).textTheme.textStyle,
-                  textAlign: TextAlign.center,
-                ),
-              )
-            : CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          _periodHeader(context),
-                          const SizedBox(height: 20),
-                          _statsRow(context),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Recent Expenses',
-                                  style: CupertinoTheme.of(context)
-                                      .textTheme
-                                      .navTitleTextStyle),
-                              CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                onPressed: () async {
-                                  await Navigator.pushNamed(
-                                      context, '/addExpense');
-                                  setState(() {});
-                                },
-                                child: const Text('+ Add'),
-                              )
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F8F8),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text('Hello, User!',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 10),
+
+              // Balance Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6B46C1), Color(0xFF805AD5)],
                   ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final expense = currentExpenses.reversed.toList()[index];
-                      return _expenseItem(expense);
-                    }, childCount: currentExpenses.length),
-                  )
-                ],
-              ),
-      ),
-    );
-  }
-
-  Widget _periodHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: CupertinoColors.systemGrey6,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Active Period',
-            style: CupertinoTheme.of(context)
-                .textTheme
-                .textStyle
-                .copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${currentPeriod!.startDate.toLocal().toString().split(' ')[0]}'
-            '  →  '
-            '${currentPeriod!.endDate.toLocal().toString().split(' ')[0]}',
-            style: const TextStyle(color: CupertinoColors.systemGrey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statsRow(BuildContext context) {
-    return Row(
-      children: [
-        _statCard('Starting', currentPeriod!.startingAmount,
-            CupertinoColors.activeBlue),
-        const SizedBox(width: 10),
-        _statCard('Spent', totalSpent, CupertinoColors.systemRed),
-        const SizedBox(width: 10),
-        _statCard('Remaining', remaining, CupertinoColors.activeGreen),
-      ],
-    );
-  }
-
-  Widget _statCard(String label, double value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: CupertinoColors.systemGrey6,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: color)),
-            const SizedBox(height: 4),
-            Text(value.toStringAsFixed(2),
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _expenseItem(ExpenseModel expense) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: CupertinoColors.systemGrey6,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey4,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(CupertinoIcons.money_dollar, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(expense.category,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(
-                  expense.date.toLocal().toString().split(' ')[0],
-                  style: const TextStyle(
-                      fontSize: 12, color: CupertinoColors.systemGrey),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ],
-            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Current Balance',
+                        style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
+                    Text(
+                      '\$${balance.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Goals
+              Text('Goals', style: Theme.of(context).textTheme.titleLarge),
+              ...goals.asMap().entries.map((entry) {
+                final i = entry.key;
+                final g = entry.value;
+                return Card(
+                  child: ListTile(
+                    title: Text('${g.name} (${g.savedAmount}/${g.targetAmount})'),
+                    subtitle: LinearProgressIndicator(
+                        value: g.savedAmount / g.targetAmount),
+                    trailing: IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () async {
+                          _addSavingToGoal(i, 10); // example add $10
+                        }),
+                  ),
+                );
+              }),
+
+              const SizedBox(height: 20),
+
+              Text('Recent Transactions',
+                  style: Theme.of(context).textTheme.titleLarge),
+              ...transactions.reversed.take(5).map((t) {
+                return ListTile(
+                  title: Text(t.title),
+                  subtitle: Text(
+                      '${t.date.toLocal().toString().substring(0, 16)}'),
+                  trailing: Text(
+                    (t.isExpense ? '-' : '+') + t.amount.toStringAsFixed(2),
+                    style: TextStyle(
+                        color: t.isExpense ? Colors.red : Colors.green),
+                  ),
+                );
+              }),
+            ],
           ),
-          Text(
-            '-${expense.amount.toStringAsFixed(2)}',
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, color: CupertinoColors.systemRed),
-          )
-        ],
+        ),
       ),
     );
   }
