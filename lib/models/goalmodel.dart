@@ -1,14 +1,14 @@
-// lib/models/goalmodel.dart
 import 'package:hive/hive.dart';
+part 'goalmodel.g.dart'; // ✅ correct part directive
 
-part 'goalmodel.g.dart';
-
-@HiveType(typeId: 1)
+@HiveType(typeId: 3) // give each model a unique typeId
 class GoalModel extends HiveObject {
   @HiveField(0)
-  String name;           // ✅ Add this
+  String name;
+
   @HiveField(1)
-  double targetAmount;   // ✅ maybe you already had this
+  double targetAmount;
+
   @HiveField(2)
   double savedAmount;
 

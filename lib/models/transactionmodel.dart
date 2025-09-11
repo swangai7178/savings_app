@@ -1,9 +1,7 @@
-// lib/models/transactionmodel.dart
 import 'package:hive/hive.dart';
-
 part 'transactionmodel.g.dart';
 
-@HiveType(typeId: 2)
+@HiveType(typeId: 4) // different from GoalModel
 class TransactionModel extends HiveObject {
   @HiveField(0)
   String title;
@@ -15,7 +13,7 @@ class TransactionModel extends HiveObject {
   DateTime date;
 
   @HiveField(3)
-  bool isExpense; // ✅ Add this
+  bool isExpense;
 
   TransactionModel({
     required this.title,

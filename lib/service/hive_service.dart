@@ -1,21 +1,28 @@
 import 'package:hive/hive.dart';
 import 'package:my_saver/models/goalmodel.dart';
 import 'package:my_saver/models/transactionmodel.dart';
-
+import 'package:my_saver/models/period_model.dart';
 
 class HiveService {
-  static const balanceKey = 'current_balance';
-
-  static Future<double> getBalance() async {
-    final box = await Hive.openBox('wallet');
-    return box.get(balanceKey, defaultValue: 0.0);
+  // PeriodModel box
+  static Future<PeriodModel?> getCurrentPeriod() async {
+    final box = await Hive.openBox<PeriodModel>('periods');
+    if (box.isEmpty) return null;
+    // you can pick the last added period as current:
+    return box.getAt(box.length - 1);
   }
 
-  static Future<void> setBalance(double amount) async {
-    final box = await Hive.openBox('wallet');
-    await box.put(balanceKey, amount);
+  static Future<void> addPeriod(PeriodModel period) async {
+    final box = await Hive.openBox<PeriodModel>('periods');
+    await box.add(period);
   }
 
+  static Future<void> updatePeriod(int index, PeriodModel period) async {
+    final box = await Hive.openBox<PeriodModel>('periods');
+    await box.putAt(index, period);
+  }
+
+  // Transactions
   static Future<void> addTransaction(TransactionModel t) async {
     final box = await Hive.openBox<TransactionModel>('transactions');
     await box.add(t);
@@ -26,6 +33,7 @@ class HiveService {
     return box.values.toList();
   }
 
+  // Goals
   static Future<void> addGoal(GoalModel goal) async {
     final box = await Hive.openBox<GoalModel>('goals');
     await box.add(goal);

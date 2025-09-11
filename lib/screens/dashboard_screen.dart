@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:my_saver/models/goalmodel.dart';
+import 'package:my_saver/models/period_model.dart';
 import 'package:my_saver/models/transactionmodel.dart';
 import 'package:my_saver/service/hive_service.dart';
 
@@ -22,41 +24,60 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _loadData() async {
-    final bal = await HiveService.getBalance();
-    final txns = await HiveService.getTransactions();
-    final g = await HiveService.getGoals();
-    setState(() {
-      balance = bal;
-      transactions = txns;
-      goals = g;
-    });
-  }
+  final period = await HiveService.getCurrentPeriod();
+  final txns = await HiveService.getTransactions();
+  final g = await HiveService.getGoals();
+  setState(() {
+    balance = period?.startingAmount ?? 0.0;
+    transactions = txns;
+    goals = g;
+  });
+}
 
   Future<void> _addSavingToGoal(int index, double amount) async {
-    if (balance >= amount) {
-      // deduct from balance
-      balance -= amount;
-      await HiveService.setBalance(balance);
-
-      // update goal
-      final goal = goals[index];
-      goal.savedAmount += amount;
-      await HiveService.updateGoal(index, goal);
-
-      // add transaction record
-      await HiveService.addTransaction(TransactionModel(
-        title: 'Saved for ${goal.name}',
-        amount: amount,
-        date: DateTime.now(),
-        isExpense: true,
-      ));
-      _loadData();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Insufficient balance')),
-      );
-    }
+  // get current period
+  final period = await HiveService.getCurrentPeriod();
+  if (period == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No active period found')),
+    );
+    return;
   }
+
+  // pick a "balance" from period (for example startingAmount - totalSpent - savings)
+  double availableBalance = period.startingAmount - period.totalSpent - period.savings;
+
+  if (availableBalance >= amount) {
+    // update period savings
+    period.savings += amount;
+
+    // update the Hive box for period
+    final box = await Hive.openBox<PeriodModel>('periods');
+    // assuming current period is the last one
+    final currentIndex = box.length - 1;
+    await box.putAt(currentIndex, period);
+
+    // update goal savedAmount
+    final goal = goals[index];
+    goal.savedAmount += amount;
+    await HiveService.updateGoal(index, goal);
+
+    // add transaction record
+    await HiveService.addTransaction(TransactionModel(
+      title: 'Saved for ${goal.name}',
+      amount: amount,
+      date: DateTime.now(),
+      isExpense: true,
+    ));
+
+    // refresh UI
+    _loadData();
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Insufficient balance')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -79,35 +100,61 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 10),
 
               // Balance Card
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6B46C1), Color(0xFF805AD5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Current Balance',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${balance.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+             Container(
+  padding: const EdgeInsets.all(20),
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      colors: [Color(0xFF6B46C1), Color(0xFF805AD5)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Left side: Balance text
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Current Balance',
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '\$${balance.toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+          ],
+        ),
+      ),
+      // Right side: Big + button
+     IconButton(
+  iconSize: 40,
+  color: Colors.white,
+  icon: const Icon(Icons.add_circle),
+  onPressed: () async {
+    // wait for the NewPeriodScreen to finish
+    await Navigator.pushNamed(context, '/newPeriod');
+
+    // then reload your data and rebuild
+    setState(() {
+      // if you have a method like _loadData() use it here:
+       _loadData();
+      // or re-fetch the balance/goals etc
+    });
+  },
+),
+    ],
+  ),
+),
+
 
               const SizedBox(height: 20),
 
@@ -185,7 +232,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     title: Text(t.title),
                     subtitle:
-                        Text('${t.date.toLocal().toString().substring(0, 16)}'),
+                        Text(t.date.toLocal().toString().substring(0, 16)),
                     trailing: Text(
                       (t.isExpense ? '-' : '+') +
                           t.amount.toStringAsFixed(2),
