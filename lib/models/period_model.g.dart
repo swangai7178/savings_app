@@ -22,13 +22,14 @@ class PeriodModelAdapter extends TypeAdapter<PeriodModel> {
       startingAmount: fields[2] as double,
       totalSpent: fields[3] as double,
       savings: fields[4] as double,
+      savingsLimit: fields[5] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, PeriodModel obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.startDate)
       ..writeByte(1)
@@ -38,7 +39,9 @@ class PeriodModelAdapter extends TypeAdapter<PeriodModel> {
       ..writeByte(3)
       ..write(obj.totalSpent)
       ..writeByte(4)
-      ..write(obj.savings);
+      ..write(obj.savings)
+      ..writeByte(5)
+      ..write(obj.savingsLimit);
   }
 
   @override

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/period_model.dart';
 
@@ -12,9 +12,10 @@ class NewPeriodScreen extends StatefulWidget {
 class _NewPeriodScreenState extends State<NewPeriodScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _limitController = TextEditingController();
 
   DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now().add(const Duration(days: 30)); // default
+  DateTime _endDate = DateTime.now().add(const Duration(days: 30));
 
   late Box<PeriodModel> periodBox;
 
@@ -28,11 +29,15 @@ class _NewPeriodScreenState extends State<NewPeriodScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final amount = double.parse(_amountController.text.trim());
+    final limit = _limitController.text.trim().isEmpty
+        ? 0.0
+        : double.parse(_limitController.text.trim());
 
     final newPeriod = PeriodModel(
       startDate: _startDate,
       endDate: _endDate,
       startingAmount: amount,
+      savingsLimit: limit,
     );
 
     await periodBox.add(newPeriod);
@@ -41,84 +46,121 @@ class _NewPeriodScreenState extends State<NewPeriodScreen> {
   }
 
   Future<void> _pickDate({required bool isStart}) async {
-    final picked = await showDatePicker(
+    final picked = await showCupertinoModalPopup<DateTime>(
       context: context,
-      initialDate: isStart ? _startDate : _endDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      builder: (_) => SizedBox(
+        height: 250,
+        child: CupertinoDatePicker(
+          initialDateTime: isStart ? _startDate : _endDate,
+          mode: CupertinoDatePickerMode.date,
+          onDateTimeChanged: (date) {
+            setState(() {
+              if (isStart) {
+                _startDate = date;
+              } else {
+                _endDate = date;
+              }
+            });
+          },
+        ),
+      ),
     );
-    if (picked != null) {
-      setState(() {
-        if (isStart) {
-          _startDate = picked;
-        } else {
-          _endDate = picked;
-        }
-      });
-    }
+    // The CupertinoDatePicker already updates state live.
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Period'),
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('New Period'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              Text(
-                'Select Period Dates',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _pickDate(isStart: true),
-                      child: Text(
-                          'Start: ${_startDate.toLocal().toString().split(' ')[0]}'),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                const Text('Select Period Dates',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CupertinoButton(
+                        color: CupertinoColors.systemGrey6,
+                        onPressed: () => _pickDate(isStart: true),
+                        child: Text(
+                            'Start: ${_startDate.toLocal().toString().split(' ')[0]}',
+                            style: const TextStyle(color: CupertinoColors.black)),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _pickDate(isStart: false),
-                      child: Text(
-                          'End: ${_endDate.toLocal().toString().split(' ')[0]}'),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: CupertinoButton(
+                        color: CupertinoColors.systemGrey6,
+                        onPressed: () => _pickDate(isStart: false),
+                        child: Text(
+                            'End: ${_endDate.toLocal().toString().split(' ')[0]}',
+                            style: const TextStyle(color: CupertinoColors.black)),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Starting Amount',
-                  hintText: 'e.g. 25000.00',
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Enter an amount';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.save),
-                label: const Text('Save Period'),
-                onPressed: _savePeriod,
-              )
-            ],
+                const SizedBox(height: 16),
+                CupertinoTextFormFieldRow(
+                  controller: _amountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  placeholder: 'Starting Amount (e.g. 25000.00)',
+                  decoration: const BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Enter an amount';
+                    }
+                    if (double.tryParse(value) == null) {
+                      return 'Enter a valid number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                CupertinoTextFormFieldRow(
+                  controller: _limitController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  placeholder: 'Savings Limit (optional)',
+                  decoration: const BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  validator: (value) {
+                    if (value != null &&
+                        value.isNotEmpty &&
+                        double.tryParse(value) == null) {
+                      return 'Enter a valid number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 48,
+                  child: CupertinoButton.filled(
+                    borderRadius: BorderRadius.circular(12),
+                    onPressed: _savePeriod,
+                    child: const Text(
+                      'Save Period',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),
