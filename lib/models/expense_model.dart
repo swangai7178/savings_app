@@ -1,8 +1,8 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
-part 'expense_model.g.dart'; // generated adapter file
+part 'expense_model.g.dart'; // generated file
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 1) // must be unique across all your models
 class ExpenseModel extends HiveObject {
   @HiveField(0)
   DateTime date;
@@ -14,12 +14,16 @@ class ExpenseModel extends HiveObject {
   double amount;
 
   @HiveField(3)
-  int periodKey; // link to PeriodModel key
+  String name; // <— New: name/description
+
+  @HiveField(4)
+  int periodKey; // linking to period
 
   ExpenseModel({
     required this.date,
     required this.category,
     required this.amount,
+    required this.name,
     required this.periodKey,
   });
 }

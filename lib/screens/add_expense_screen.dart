@@ -13,11 +13,22 @@ class AddExpenseScreen extends StatefulWidget {
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
 
   late Box<PeriodModel> periodBox;
   late Box<ExpenseModel> expenseBox;
+
+  // Predefined categories for picker
+  final List<String> _categories = [
+    'Food',
+    'Transport',
+    'Rent',
+    'Utilities',
+    'Shopping',
+    'Entertainment'
+  ];
+  int _selectedCategoryIndex = 0;
 
   @override
   void initState() {
@@ -41,12 +52,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
-    final category = _categoryController.text.trim();
+    final category = _categories[_selectedCategoryIndex];
+    final name = _nameController.text.trim();
     final amount = double.parse(_amountController.text.trim());
 
     final newExpense = ExpenseModel(
       date: DateTime.now(),
       category: category,
+      name: name, // add a 'name' field to your model
       amount: amount,
       periodKey: currentPeriod!.key as int,
     );
@@ -60,6 +73,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     await currentPeriod!.save();
 
     Navigator.pop(context);
+  }
+
+  void _showCategoryPicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => SizedBox(
+        height: 250,
+        child: CupertinoPicker(
+          backgroundColor: CupertinoColors.systemGrey6,
+          itemExtent: 40,
+          scrollController:
+              FixedExtentScrollController(initialItem: _selectedCategoryIndex),
+          onSelectedItemChanged: (index) {
+            setState(() {
+              _selectedCategoryIndex = index;
+            });
+          },
+          children: _categories.map((c) => Text(c)).toList(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -78,21 +112,45 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Category Picker
+                GestureDetector(
+                  onTap: _showCategoryPicker,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemGrey6,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_categories[_selectedCategoryIndex]),
+                        const Icon(CupertinoIcons.chevron_down),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Name/Description
                 CupertinoTextFormFieldRow(
-                  controller: _categoryController,
-                  placeholder: 'Category (e.g. Food, Transport)',
+                  controller: _nameController,
+                  placeholder: 'Name / Description',
                   decoration: const BoxDecoration(
                     color: CupertinoColors.systemGrey6,
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Enter a category';
+                      return 'Enter a name/description';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // Amount
                 CupertinoTextFormFieldRow(
                   controller: _amountController,
                   keyboardType:
@@ -113,6 +171,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   },
                 ),
                 const SizedBox(height: 30),
+
+                // Save Button
                 SizedBox(
                   height: 48,
                   child: CupertinoButton.filled(
