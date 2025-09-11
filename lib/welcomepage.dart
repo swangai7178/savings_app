@@ -12,14 +12,10 @@ class WelcomePage extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
               Center(
-                child: Image.asset(
-                  'assets/coin.png', // your logo asset
-                  height: 150,
-                ),
+                child: Image.asset('assets/coin.png', height: 150),
               ),
               const SizedBox(height: 40),
               const Text(
@@ -29,11 +25,13 @@ class WelcomePage extends StatelessWidget {
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               const Text(
                 'Take control of your financial future with personalized insights.',
                 style: TextStyle(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
               ),
               const Spacer(),
               Row(
@@ -43,11 +41,13 @@ class WelcomePage extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/dashboard');
+                        Navigator.pushNamed(context, '/signUp');
                       },
                       child: const Text('Sign up'),
                     ),
@@ -57,11 +57,13 @@ class WelcomePage extends StatelessWidget {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/dashboard');
+                        Navigator.pushNamed(context, '/login');
                       },
                       child: const Text(
                         'Log in',

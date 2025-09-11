@@ -6,6 +6,7 @@ import 'package:my_saver/models/expense_model.dart';
 import 'package:my_saver/models/goalmodel.dart';
 import 'package:my_saver/models/period_model.dart';
 import 'package:my_saver/models/transactionmodel.dart';
+import 'package:my_saver/models/user_model.dart';
 
 
 // your screens
@@ -27,12 +28,15 @@ void main() async {
   Hive.registerAdapter(ExpenseModelAdapter());
   Hive.registerAdapter(GoalModelAdapter());
   Hive.registerAdapter(TransactionModelAdapter());
+  Hive.registerAdapter(UserModelAdapter());   
 
   // Open boxes
   await Hive.openBox<PeriodModel>('periods');
   await Hive.openBox<ExpenseModel>('expenses');
   await Hive.openBox<GoalModel>('goals');
   await Hive.openBox<TransactionModel>('transactions');
+ // 👈 register the adapter
+  await Hive.openBox<UserModel>('userBox'); 
 
   runApp(const MyApp());
 }

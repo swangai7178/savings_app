@@ -30,7 +30,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final txns = await HiveService.getTransactions();
   final g = await HiveService.getGoals();
   setState(() {
-    balance = period?.startingAmount ?? 0.0;
+    balance = period?.savings ?? 0.0;
     transactions = txns;
     goals = g;
   });
