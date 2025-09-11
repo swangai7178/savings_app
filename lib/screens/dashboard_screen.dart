@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/period_model.dart';
 import '../models/expense_model.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -134,7 +134,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
       floatingActionButton: FloatingActionButton.extended(
