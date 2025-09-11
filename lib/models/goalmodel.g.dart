@@ -20,19 +20,22 @@ class GoalModelAdapter extends TypeAdapter<GoalModel> {
       name: fields[0] as String,
       targetAmount: fields[1] as double,
       savedAmount: fields[2] as double,
+      deadline: fields[3] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, GoalModel obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
       ..write(obj.targetAmount)
       ..writeByte(2)
-      ..write(obj.savedAmount);
+      ..write(obj.savedAmount)
+      ..writeByte(3)
+      ..write(obj.deadline);
   }
 
   @override
