@@ -30,7 +30,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final txns = await HiveService.getTransactions();
   final g = await HiveService.getGoals();
   setState(() {
-    balance = period?.savings ?? 0.0;
+    balance = period?.startingAmount ?? 0.0;
     transactions = txns;
     goals = g;
   });
@@ -269,19 +269,19 @@ Row(
         ),
       ),
      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // navigate to add transaction page and wait for result
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddTransactionScreen(),
-            ),
-          );
-          // refresh the list after returning
-          setState(() {});
-        },
-        child: const Icon(Icons.add),
+  onPressed: () async {
+    // navigate to add transaction page and wait for result
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddTransactionScreen(),
       ),
+    );
+    // Refresh the data from Hive after returning
+    _loadData();
+  },
+  child: const Icon(Icons.add),
+),
     );
   }
 }

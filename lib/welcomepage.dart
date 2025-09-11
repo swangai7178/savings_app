@@ -47,7 +47,7 @@ class WelcomePage extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       onPressed: () {
-                        Navigator.pushNamed(context, '/signUp');
+                        Navigator.pushNamed(context, '/signup');
                       },
                       child: const Text('Sign up'),
                     ),

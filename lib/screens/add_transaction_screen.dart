@@ -57,12 +57,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     // update period totals
     if (_isExpense) {
-      currentPeriod!.totalSpent += amount;
+      currentPeriod!.startingAmount -= amount;
     } else {
       currentPeriod!.startingAmount += amount;
     }
-    currentPeriod!.savings =
-        currentPeriod!.startingAmount - currentPeriod!.totalSpent;
+    
     await currentPeriod!.save();
 
     Navigator.pop(context);
@@ -107,7 +106,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       Text(
                         currentPeriod == null
                             ? '\$0.00'
-                            : '\$${currentPeriod!.savings.toStringAsFixed(2)}',
+                            : '\$${currentPeriod!.startingAmount.toStringAsFixed(2)}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 28,

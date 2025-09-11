@@ -26,11 +26,6 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     super.dispose();
   }
 
-  int get _durationInDays {
-    final txt = _durationController.text.trim();
-    if (txt.isEmpty) return 0;
-    return int.tryParse(txt) ?? 0;
-  }
 
   Future<void> _pickDeadline() async {
     final now = DateTime.now();

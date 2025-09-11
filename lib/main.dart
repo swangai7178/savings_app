@@ -13,8 +13,10 @@ import 'package:my_saver/models/user_model.dart';
 import 'package:my_saver/screens/add_expense_screen.dart';
 import 'package:my_saver/screens/add_goals_screen.dart';
 import 'package:my_saver/screens/add_transaction_screen.dart';
+import 'package:my_saver/screens/loginscreen.dart';
 import 'package:my_saver/screens/new_period_screen.dart';
 import 'package:my_saver/screens/dashboard_screen.dart';
+import 'package:my_saver/screens/signupscreen.dart';
 import 'package:my_saver/welcomepage.dart';
 
 void main() async {
@@ -61,6 +63,8 @@ class MyApp extends StatelessWidget {
         '/newPeriod': (context) => const NewPeriodScreen(),
         '/addGoal': (context) => const AddGoalScreen(),
         '/addTransaction': (context) => const AddTransactionScreen(),
+        '/signup': (context) => const SignUpScreen(),
+        '/login': (context) => const LoginScreen(),
 
         // you can add more routes for goals/transactions if needed
       },
