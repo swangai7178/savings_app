@@ -10,6 +10,8 @@ import 'package:my_saver/models/transactionmodel.dart';
 
 // your screens
 import 'package:my_saver/screens/add_expense_screen.dart';
+import 'package:my_saver/screens/add_goals_screen.dart';
+import 'package:my_saver/screens/add_transaction_screen.dart';
 import 'package:my_saver/screens/new_period_screen.dart';
 import 'package:my_saver/screens/dashboard_screen.dart';
 import 'package:my_saver/welcomepage.dart';
@@ -53,6 +55,9 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardPage(),
         '/addExpense': (context) => const AddExpenseScreen(),
         '/newPeriod': (context) => const NewPeriodScreen(),
+        '/addGoal': (context) => const AddGoalScreen(),
+        '/addTransaction': (context) => const AddTransactionScreen(),
+
         // you can add more routes for goals/transactions if needed
       },
     );

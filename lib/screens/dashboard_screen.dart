@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:my_saver/models/goalmodel.dart';
 import 'package:my_saver/models/period_model.dart';
 import 'package:my_saver/models/transactionmodel.dart';
+import 'package:my_saver/screens/add_transaction_screen.dart';
 import 'package:my_saver/service/hive_service.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -159,54 +161,72 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 20),
 
               // Goals Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Goals',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      // navigate to add goal screen
-                    },
-                  ),
-                ],
+             // Goals section header + list
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Text(
+      'Goals',
+      style: Theme.of(context)
+          .textTheme
+          .titleLarge
+          ?.copyWith(fontWeight: FontWeight.bold),
+    ),
+    IconButton(
+      icon: const Icon(Icons.add),
+      onPressed: () async {
+        // navigate to add goal screen
+        await Navigator.pushNamed(context, '/addGoal'); 
+        // after returning, reload data
+        _loadData();
+      },
+    ),
+  ],
+),
+
+// Goals list
+...goals.asMap().entries.map((entry) {
+  final i = entry.key;
+  final g = entry.value;
+  final progress =
+      g.targetAmount == 0 ? 0.0 : (g.savedAmount / g.targetAmount);
+  return Card(
+    shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        title: Text(g.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                '\$${g.savedAmount.toStringAsFixed(2)} / \$${g.targetAmount.toStringAsFixed(2)}'),
+            const SizedBox(height: 4),
+            LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 6,
+            ),
+            if (g.deadline != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Deadline: ${DateFormat.yMMMd().format(g.deadline!)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
-              ...goals.asMap().entries.map((entry) {
-                final i = entry.key;
-                final g = entry.value;
-                final progress = g.targetAmount == 0
-                    ? 0.0
-                    : g.savedAmount / g.targetAmount;
-                return Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text(g.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              '\$${g.savedAmount.toStringAsFixed(2)} / \$${g.targetAmount.toStringAsFixed(2)}'),
-                          const SizedBox(height: 4),
-                          LinearProgressIndicator(value: progress),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.savings),
-                        onPressed: () => _addSavingToGoal(i, 10), // add $10
-                      ),
-                    ),
-                  ),
-                );
-              }),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.savings),
+          tooltip: 'Save \$10 to this goal',
+          onPressed: () => _addSavingToGoal(i, 10),
+        ),
+      ),
+    ),
+  );
+}),
+
 
               const SizedBox(height: 20),
 
@@ -248,9 +268,17 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // navigate to add transaction/expense
+     floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          // navigate to add transaction page and wait for result
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddTransactionScreen(),
+            ),
+          );
+          // refresh the list after returning
+          setState(() {});
         },
         child: const Icon(Icons.add),
       ),
