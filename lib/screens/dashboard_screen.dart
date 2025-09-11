@@ -65,12 +65,7 @@ class _DashboardPageState extends State<DashboardPage> {
     await HiveService.updateGoal(index, goal);
 
     // add transaction record
-    await HiveService.addTransaction(TransactionModel(
-      title: 'Saved for ${goal.name}',
-      amount: amount,
-      date: DateTime.now(),
-      isExpense: true,
-    ));
+    
 
     // refresh UI
     _loadData();
