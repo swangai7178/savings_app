@@ -1,4 +1,5 @@
-import 'package:hive/hive.dart';
+
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:my_saver/models/goalmodel.dart';
 import 'package:my_saver/models/transactionmodel.dart';
 import 'package:my_saver/models/period_model.dart';

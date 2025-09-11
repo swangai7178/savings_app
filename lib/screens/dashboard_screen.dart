@@ -189,7 +189,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: ListTile(
-                      title: Text('${g.name}'),
+                      title: Text(g.name),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

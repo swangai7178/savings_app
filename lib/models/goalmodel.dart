@@ -1,4 +1,5 @@
-import 'package:hive/hive.dart';
+
+import 'package:hive_flutter/hive_flutter.dart';
 part 'goalmodel.g.dart'; // ✅ correct part directive
 
 @HiveType(typeId: 3) // give each model a unique typeId

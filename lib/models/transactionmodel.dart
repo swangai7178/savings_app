@@ -1,4 +1,5 @@
-import 'package:hive/hive.dart';
+
+import 'package:hive_flutter/hive_flutter.dart';
 part 'transactionmodel.g.dart';
 
 @HiveType(typeId: 4) // different from GoalModel
