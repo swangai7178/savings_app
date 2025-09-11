@@ -1,28 +1,20 @@
-import 'package:hive_flutter/hive_flutter.dart';
-part 'goal_model.g.dart';
+// lib/models/goalmodel.dart
+import 'package:hive/hive.dart';
+
+part 'goalmodel.g.dart';
 
 @HiveType(typeId: 1)
-class GoalModel {
+class GoalModel extends HiveObject {
   @HiveField(0)
-  String name;
-
+  String name;           // ✅ Add this
   @HiveField(1)
-  double targetAmount;
-
+  double targetAmount;   // ✅ maybe you already had this
   @HiveField(2)
   double savedAmount;
-
-  @HiveField(3)
-  DateTime startDate;
-
-  @HiveField(4)
-  DateTime endDate;
 
   GoalModel({
     required this.name,
     required this.targetAmount,
-    this.savedAmount = 0,
-    required this.startDate,
-    required this.endDate,
+    required this.savedAmount,
   });
 }
